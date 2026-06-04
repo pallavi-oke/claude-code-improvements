@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 70% -10%, #1a2547 0%, #0b1020 55%);
+  color: #e6edff;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.card {
+  @apply bg-panel border border-edge rounded-2xl p-5 shadow-lg;
+}
+
+.chip {
+  @apply inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full;
+}
+
+.tab-btn {
+  @apply px-4 py-2 rounded-xl text-sm font-medium transition-colors;
+}
+
+.gap-caption {
+  @apply text-xs text-muted leading-relaxed;
+}
+
+/* React Flow dark tweaks */
+.react-flow__node {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+.react-flow__attribution {
+  display: none;
+}

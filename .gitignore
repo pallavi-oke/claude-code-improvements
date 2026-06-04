@@ -1,0 +1,15 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+backend/rag/.chroma/
+
+# Node / frontend
+node_modules/
+dist/
+
+# Editor / OS / local harness
+.claude/
+.DS_Store
