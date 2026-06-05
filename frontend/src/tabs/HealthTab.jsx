@@ -89,7 +89,7 @@ export default function HealthTab({ source }) {
               <ReferenceLine x={h.warning_turn} stroke="#f59e0b" strokeDasharray="4 3"
                 label={{ value: "warn", fill: "#f59e0b", fontSize: 10, position: "top" }} />
             )}
-            <Area type="monotone" dataKey="util" stroke={z.c} strokeWidth={2} fill="url(#util)" />
+            <Area isAnimationActive={false} type="monotone" dataKey="util" stroke={z.c} strokeWidth={2} fill="url(#util)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>

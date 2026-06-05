@@ -86,7 +86,7 @@ function AttributionBars({ rows, height = 200 }) {
           contentStyle={{ background: "#161f3a", border: "1px solid #243150", borderRadius: 10, color: "#fff" }}
           formatter={(v) => fmt(v)}
         />
-        <Bar dataKey="cost" radius={[0, 6, 6, 0]}>
+        <Bar dataKey="cost" radius={[0, 6, 6, 0]} isAnimationActive={false}>
           {top.map((_, i) => <Cell key={i} fill={BARC[i % BARC.length]} />)}
         </Bar>
       </BarChart>
@@ -115,10 +115,10 @@ function ForecastChart({ daily, band }) {
           formatter={(v, n) => [fmt(v), n]}
         />
         <Legend wrapperStyle={{ fontSize: 11, color: "#8aa0c8" }} />
-        <Area type="monotone" dataKey="high" stroke="none" fill="url(#band)" name="forecast high" />
-        <Area type="monotone" dataKey="low" stroke="none" fill="#0b1020" name="forecast low" />
-        <Area type="monotone" dataKey="expected" stroke="#f59e0b" strokeDasharray="5 4" fill="none" name="forecast" />
-        <Area type="monotone" dataKey="actual" stroke="#7c9bff" strokeWidth={2} fill="#7c9bff22" name="actual spend" />
+        <Area isAnimationActive={false} type="monotone" dataKey="high" stroke="none" fill="url(#band)" name="forecast high" />
+        <Area isAnimationActive={false} type="monotone" dataKey="low" stroke="none" fill="#0b1020" name="forecast low" />
+        <Area isAnimationActive={false} type="monotone" dataKey="expected" stroke="#f59e0b" strokeDasharray="5 4" fill="none" name="forecast" />
+        <Area isAnimationActive={false} type="monotone" dataKey="actual" stroke="#7c9bff" strokeWidth={2} fill="#7c9bff22" name="actual spend" />
       </AreaChart>
     </ResponsiveContainer>
   );

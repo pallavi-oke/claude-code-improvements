@@ -13,6 +13,22 @@ on any laptop.
 | 2 | In long sessions, output quality can quietly degrade before you notice | **Active Session Health** — a context-utilization gauge + zone timeline that fires a *pre-emptive* warning before the high-risk zone, plus a smart-cleanup preview that preserves decisions/constraints |
 | 3 | As usage scales, spend is hard to attribute, predict, and compare to value | **Team Cost Attribution & Forecasting** — spend by repo / use case / owner + a run-rate forecast with a confidence band |
 
+## Screenshots
+
+**1 · Visual Workflow Composer & Inspector** — the dependency graph of a real multi-agent workflow (here, the ContentForge 5-node cross-model pipeline) rendered *before* execution. Edit the script or add steps and the DAG updates.
+
+![Workflow Composer](docs/composer.png)
+
+**2 · Active Session Health** — context-utilization gauge + zone timeline. The warning fires at **turn 37**, *before* the high-risk zone — so cleanup happens while decisions are still intact, not after output degrades. Smart-cleanup preview shows what's preserved vs. compacted.
+
+![Session Health](docs/health.png)
+
+**3 · Team Cost Attribution & Forecasting** — spend by repo / use case / owner, a 30-day forecast with a confidence band, and a **cross-model breakdown** (GPT-5 / Gemini / Claude) for the ContentForge pipeline — the view that answers "which model is driving cost, and is it worth it?"
+
+![Team Cost](docs/cost.png)
+
+> Tip: tabs and data source are deep-linkable — e.g. `…/#health` or `…/?source=sample#cost`.
+
 ## Why this is credible (the PM angle)
 
 These are standalone prototypes, **not** edits to Claude Code's closed source.

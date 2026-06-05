@@ -28,13 +28,32 @@ const TABS = [
   },
 ];
 
+const VALID_TABS = ["composer", "health", "cost"];
+const tabFromHash = () => {
+  const h = (window.location.hash || "").replace("#", "");
+  return VALID_TABS.includes(h) ? h : "composer";
+};
+
+const sourceFromUrl = () => {
+  const s = new URLSearchParams(window.location.search).get("source");
+  return ["all", "sample", "live"].includes(s) ? s : "all";
+};
+
 export default function App() {
-  const [tab, setTab] = useState("composer");
-  const [source, setSource] = useState("all");
+  const [tab, setTabState] = useState(tabFromHash);
+  const [source, setSource] = useState(sourceFromUrl);
   const [meta, setMeta] = useState(null);
+
+  const setTab = (id) => {
+    setTabState(id);
+    window.location.hash = id; // deep-linkable: #composer / #health / #cost
+  };
 
   useEffect(() => {
     api.meta().then(setMeta).catch(() => {});
+    const onHash = () => setTabState(tabFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
   const active = TABS.find((t) => t.id === tab);
