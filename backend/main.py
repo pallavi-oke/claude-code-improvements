@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from comparison import compare
 from contentforge_runs import measured_runs
 from health import session_health
 from runtime_cost import runtime
@@ -57,6 +58,12 @@ def meta() -> dict:
 @app.get("/api/cost")
 def cost(source: str = "all") -> dict:
     return aggregate(get_sessions(source))
+
+
+@app.get("/api/comparison")
+def comparison_endpoint(articles: int = 60000, validator_tier: str = "opus") -> dict:
+    """5-agent vs monolithic baseline comparison + Validator-tier lever."""
+    return compare(articles, validator_tier)
 
 
 @app.get("/api/contentforge-runs")

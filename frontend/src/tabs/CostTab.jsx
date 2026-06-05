@@ -20,11 +20,16 @@ const MODE_FROM_URL = () => {
   return ["build", "run", "total"].includes(m) ? m : "total";
 };
 
+const VOLUME_FROM_URL = () => {
+  const v = parseInt(new URLSearchParams(window.location.search).get("volume") || "", 10);
+  return Number.isFinite(v) && v >= 500 ? v : 5000;
+};
+
 export default function CostTab({ source }) {
   const [mode, setMode] = useState(MODE_FROM_URL);
   const [data, setData] = useState(null);
   const [tco, setTco] = useState(null);
-  const [articles, setArticles] = useState(5000);
+  const [articles, setArticles] = useState(VOLUME_FROM_URL);
 
   useEffect(() => {
     api.cost(source).then(setData).catch(() => setData(null));
@@ -119,6 +124,8 @@ function RunView({ tco, articles, setArticles }) {
 
       <VolumeControl articles={articles} setArticles={setArticles} />
 
+      <ComparisonPanel articles={articles} />
+
       {measured?.available && <MeasuredRunsCard measured={measured} />}
 
       <div className="grid lg:grid-cols-2 gap-4">
@@ -139,6 +146,130 @@ function RunView({ tco, articles, setArticles }) {
       <div className="text-[11px] text-muted">
         Modeled from ContentForge's per-node model assignment × indicative list prices. Becomes
         real once a live run's usage log is fed in — the per-article math is identical.
+      </div>
+    </div>
+  );
+}
+
+/* ---- Compare 5-agent vs monolithic baselines + Validator tier lever ---- */
+function ComparisonPanel({ articles }) {
+  const [tier, setTier] = useState("opus");
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    api.comparison(articles, tier).then(setData).catch(() => setData(null));
+  }, [articles, tier]);
+  if (!data) return null;
+
+  const rows = data.rows.map((r) => ({
+    ...r,
+    color:
+      r.kind === "5-agent" && r.selected ? "#7c9bff"
+      : r.kind === "5-agent" ? "#3a4a73"
+      : r.has_compliance ? "#f59e0b"
+      : "#22c55e",
+  }));
+
+  const cur = data.five_agent_current;
+  const fairMonthly = data.breakeven.extra_monthly_vs_fair;
+  const unsafeMonthly = data.breakeven.extra_monthly_vs_unsafe;
+  const b1k = data.breakeven.violations_to_breakeven.find((v) => v.cost_per_violation === 1000);
+
+  return (
+    <div className="card border-warn/30">
+      <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+        <h3 className="font-semibold">
+          Compare to monolithic <span className="chip bg-warn/15 text-warn ml-1">value of guardrails</span>
+        </h3>
+        <div className="text-xs text-muted">
+          What does the 5-agent system actually buy you over a single-prompt approach?
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-3 mt-2">
+        <span className="text-xs text-muted">5-agent Validator tier:</span>
+        <div className="flex bg-panel2 rounded-lg p-1">
+          {["opus", "sonnet", "haiku"].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTier(t)}
+              className={`px-3 py-1 rounded-md text-xs font-medium capitalize ${
+                tier === t ? "bg-accent text-ink" : "text-muted hover:text-white"
+              }`}
+            >
+              Claude {t}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-muted">at {Number(articles).toLocaleString()} articles/mo · {data.articles_per_day}/day</span>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Stat label={`5-agent (${cur.validator})`} value={fmt(cur.monthly)} tone="bad" sub={`$${cur.per_article.toFixed(3)}/article`} />
+        <Stat label="Validator lever: → Sonnet" value={`-${data.savings.opus_to_sonnet_pct}%`} tone="good"
+          sub={`saves ${fmt(data.savings.opus_to_sonnet_monthly)}/mo vs Opus`} />
+        <Stat label="vs fair monolithic" value={`+${fmt(fairMonthly)}/mo`} tone="warn"
+          sub={data.breakeven.fair_baseline_name} />
+        <Stat label="Breakeven @ $1k/violation" value={`${b1k?.needed || 0}/mo`} tone="good"
+          sub="violations 5-agent must prevent" />
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <span className="text-xs text-muted">Monthly cost — all options sorted (5-agent vs single-prompt)</span>
+          <div className="flex gap-3 text-[11px] text-muted">
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#7c9bff" }} /> 5-agent (selected)</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#3a4a73" }} /> 5-agent (other tier)</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#f59e0b" }} /> monolithic + compliance</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#22c55e" }} /> monolithic, no compliance</span>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={Math.max(240, rows.length * 32)}>
+          <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24 }}>
+            <XAxis type="number" hide />
+            <YAxis type="category" dataKey="name" width={220} tick={{ fill: "#cbd5ff", fontSize: 11 }} />
+            <Tooltip
+              cursor={{ fill: "#ffffff10" }}
+              contentStyle={{ background: "#161f3a", border: "1px solid #243150", borderRadius: 10, color: "#fff" }}
+              formatter={(v) => fmt(v)}
+            />
+            <Bar dataKey="monthly" radius={[0, 6, 6, 0]} isAnimationActive={false}>
+              {rows.map((r, i) => <Cell key={i} fill={r.color} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-3 mt-3 text-xs">
+        <div className="bg-panel2/60 rounded-lg p-3">
+          <div className="font-semibold text-warn mb-1.5">What guardrails buy you (and monolithic can't)</div>
+          <ul className="space-y-1 text-white/85">
+            <li>• <b>Junk filtered before spend</b> — Scorer drops low-value keywords before generation cost</li>
+            <li>• <b>Independent compliance</b> — Reviewer is a different model family than Generator (no self-grading)</li>
+            <li>• <b>Per-stage auditability</b> — when something fails, you know exactly which gate</li>
+            <li>• <b>Quality compounding</b> — Validator pre-selects the best outline before drafting</li>
+          </ul>
+        </div>
+        <div className="bg-panel2/60 rounded-lg p-3">
+          <div className="font-semibold text-good mb-1.5">Breakeven framing</div>
+          <div className="text-white/85 leading-relaxed">
+            5-agent costs <b className="text-bad">{fmt(unsafeMonthly)}/mo</b> more than the cheapest
+            (unsafe) monolithic. To justify that delta, it must prevent compliance violations worth:
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-1.5 font-mono">
+            {data.breakeven.violations_to_breakeven.map((v) => (
+              <div key={v.cost_per_violation} className="bg-ink/50 rounded px-2 py-1 text-[11px]">
+                @ ${v.cost_per_violation}/violation → <b className="text-warn">{v.needed}/mo</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 text-[11px] text-muted leading-relaxed">
+        <b className="text-white">Read:</b> Going Validator → Sonnet (still cross-model from GPT-5 Planner) saves{" "}
+        <b className="text-good">{data.savings.opus_to_sonnet_pct}%</b> with no compliance loss. The
+        5-agent system then sits within striking distance of monolithic + an Opus compliance pass —
+        but adds junk filtering, outline validation, and auditability on top.
       </div>
     </div>
   );
@@ -270,19 +401,42 @@ function TotalView({ tco, articles, setArticles }) {
 }
 
 function VolumeControl({ articles, setArticles }) {
+  const presets = [
+    { label: "100/day", value: 3000 },
+    { label: "500/day", value: 15000 },
+    { label: "2K/day", value: 60000 },
+    { label: "5K/day", value: 150000 },
+  ];
   return (
-    <div className="card !py-3 flex items-center gap-4">
-      <span className="text-xs text-muted whitespace-nowrap">Production volume</span>
-      <input
-        type="range"
-        min={500}
-        max={50000}
-        step={500}
-        value={articles}
-        onChange={(e) => setArticles(Number(e.target.value))}
-        className="flex-1 accent-accent"
-      />
-      <span className="text-sm font-semibold w-28 text-right">{Number(articles).toLocaleString()} / mo</span>
+    <div className="card !py-3 space-y-2">
+      <div className="flex items-center gap-4">
+        <span className="text-xs text-muted whitespace-nowrap">Production volume</span>
+        <input
+          type="range"
+          min={500}
+          max={300000}
+          step={500}
+          value={articles}
+          onChange={(e) => setArticles(Number(e.target.value))}
+          className="flex-1 accent-accent"
+        />
+        <span className="text-sm font-semibold w-32 text-right">
+          {Number(articles).toLocaleString()} / mo
+          <span className="block text-[10px] text-muted">≈ {Math.round(articles / 30).toLocaleString()}/day</span>
+        </span>
+      </div>
+      <div className="flex gap-1.5 text-[11px]">
+        <span className="text-muted">Quick set:</span>
+        {presets.map((p) => (
+          <button
+            key={p.label}
+            onClick={() => setArticles(p.value)}
+            className={`px-2 py-0.5 rounded ${articles === p.value ? "bg-accent text-ink" : "bg-panel2 text-muted hover:text-white"}`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

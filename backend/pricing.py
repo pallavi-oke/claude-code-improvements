@@ -16,7 +16,9 @@ PRICING: dict[str, tuple[float, float, float, float]] = {
     "haiku":  (0.80, 4.0, 1.0, 0.08),
     # OpenAI
     "gpt-5":  (1.25, 10.0, 1.25, 0.125),
-    # Google
+    # Google — "flash" must come before "gemini" so substring match hits it first
+    # for ids like "gemini-2.5-flash"; bare "gemini" then catches Pro tiers.
+    "flash":  (0.30, 2.50, 0.30, 0.075),
     "gemini": (1.25, 10.0, 1.25, 0.31),
 }
 

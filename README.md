@@ -38,6 +38,14 @@ The Run-time view also surfaces **real measured runs** from the original Content
 
 ![Cost — Run-time with measured ContentForge runs](docs/cost-runtime-measured.png)
 
+And a **"Compare to monolithic"** panel that answers the obvious follow-up — *is multi-agent worth it?* It shows the 5-agent system at three Validator tiers (Opus / Sonnet / Haiku), every reasonable monolithic single-prompt baseline (Gemini Flash, GPT-5, Gemini Pro, Opus, with/without cache), and a "fair" multi-call comparison (GPT-5 generation + Opus compliance pass). A breakeven framing translates the cost delta into the number of compliance violations the multi-agent pipeline must prevent per month to justify itself. At 2K articles/day:
+- 5-agent (Opus): ~$12.6K/mo · with Sonnet validator: ~$7K/mo (a single config change saves ~44%)
+- Cheapest unsafe monolithic (Flash + cache): ~$354/mo — but no independent compliance check
+- "Fair" monolithic (GPT-5 + Opus compliance pass): ~$6.1K/mo — within striking distance of 5-agent w/ Sonnet
+- Breakeven: prevent ~12 compliance violations/mo at $1k each to justify the multi-agent cost over a no-compliance monolithic
+
+![Cost — Compare 5-agent to monolithic baselines](docs/cost-comparison.png)
+
 > Tip: tabs and data source are deep-linkable — e.g. `…/#health` or `…/?source=sample#cost`.
 
 ## Approach
