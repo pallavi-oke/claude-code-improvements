@@ -11,7 +11,7 @@ runs on any laptop.
 |---|-----------|-----------|
 | 1 | Can watch agents run, but can't shape how they fit together before they start | **Visual Workflow Composer & Inspector** — renders a workflow script as a DAG (phases, handoffs, parallel fan-out) *before* execution; compose steps and watch the graph update |
 | 2 | In long sessions, output quality can quietly degrade before you notice | **Active Session Health** — a context-utilization gauge + zone timeline that fires a *pre-emptive* warning before the high-risk zone, plus a smart-cleanup preview that preserves decisions/constraints |
-| 3 | As usage scales, spend is hard to attribute, predict, and compare to value | **Team Cost Attribution & Forecasting** — spend by repo / use case / owner + a run-rate forecast with a confidence band |
+| 3 | As usage scales, spend is hard to attribute, predict, and compare to value | **Cost Attribution, Forecasting & TCO** — build-time dev spend (by repo / use case / owner) *and* an agent's run-time cost, combined into a total cost of ownership |
 
 ## Screenshots
 
@@ -27,9 +27,12 @@ The same composer pointed at a second pilot — **Sentinel Vantage** (MerchantMi
 
 ![Session Health](docs/health.png)
 
-**3 · Team Cost Attribution & Forecasting** — spend by repo / use case / owner, a 30-day forecast with a confidence band, and a **cross-model breakdown** (GPT-5 / Gemini / Claude) for the ContentForge pipeline — the view that answers "which model is driving cost, and is it worth it?"
+**3 · Cost Attribution, Forecasting & Total Cost of Ownership** — three modes:
+- **Build-time** — what it costs to *build* with Claude Code (dev spend by repo / use case / owner + forecast)
+- **Run-time** — what it costs to *operate* the agent: cost-per-article across the cross-model pipeline, scaled by a production-volume control
+- **Total (TCO)** — build-time + projected run-time for the agent, so you can compare one-time dev cost against recurring operating cost (here: ~$82 to build vs ~$13k/yr to run at 5k articles/mo — and Claude validation is the biggest run-time lever)
 
-![Team Cost](docs/cost.png)
+![Cost — Total Cost of Ownership](docs/cost.png)
 
 > Tip: tabs and data source are deep-linkable — e.g. `…/#health` or `…/?source=sample#cost`.
 
@@ -75,9 +78,12 @@ second terminal — it proxies `/api` to the backend on 8000.
 2. **Health** — Over a 58-turn session, context climbs from healthy to 96%. The
    warning fires at **turn 37**, *before* the high-risk zone, so cleanup happens
    while key decisions are still intact rather than after output degrades.
-3. **Cost** — Per-session spend is fine for one person; a team needs spend by
-   repo, use case, and engineer, plus a forecast range — the view that informs a
-   scale-up decision.
+3. **Cost** — Per-session spend is fine for one person; a team needs more. This
+   separates **build-time** (what it costs to build with Claude Code, by
+   repo/use-case/engineer) from **run-time** (what the agent costs to operate in
+   production) and combines them into a **total cost of ownership** — so you can
+   weigh one-time dev cost against recurring operating cost, and see which model
+   drives the run-time bill.
 
 ## Notes
 

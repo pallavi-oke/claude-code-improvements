@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from health import session_health
+from runtime_cost import runtime
 from sample_data import build_team_sessions
 from transcripts import aggregate, load_live_sessions
 from workflow_parse import EXAMPLES, SAMPLE_WORKFLOW, parse_workflow
@@ -55,6 +56,42 @@ def meta() -> dict:
 @app.get("/api/cost")
 def cost(source: str = "all") -> dict:
     return aggregate(get_sessions(source))
+
+
+@app.get("/api/tco")
+def tco(source: str = "all", articles: int = 5000, agent: str = "contentforge") -> dict:
+    """Total cost of ownership for an agent: build-time (Claude Code dev spend on
+    the agent's repo) + run-time (the agent operating in production)."""
+    sessions_ = get_sessions(source)
+
+    # Build-time: Claude Code dev spend attributed to the agent's repo(s).
+    agent_sessions = [s for s in sessions_ if agent in s["repo"].lower()]
+    build_to_date = round(sum(s["cost"] for s in agent_sessions), 2)
+    build_by_use_case: dict[str, float] = {}
+    for s in agent_sessions:
+        build_by_use_case[s["title"]] = build_by_use_case.get(s["title"], 0) + s["cost"]
+    build_breakdown = sorted(
+        [{"name": k, "cost": round(v, 2)} for k, v in build_by_use_case.items()],
+        key=lambda x: x["cost"], reverse=True,
+    )
+
+    rt = runtime(articles)
+    annual_runtime = rt["annual"]
+
+    return {
+        "agent": agent,
+        "build": {
+            "to_date": build_to_date,
+            "session_count": len(agent_sessions),
+            "by_use_case": build_breakdown,
+        },
+        "runtime": rt,
+        "tco": {
+            "build_to_date": build_to_date,
+            "runtime_annual": annual_runtime,
+            "total_year_one": round(build_to_date + annual_runtime, 2),
+        },
+    }
 
 
 @app.get("/api/sessions")
