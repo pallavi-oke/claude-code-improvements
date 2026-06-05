@@ -15,9 +15,13 @@ runs on any laptop.
 
 ## Screenshots
 
-**1 · Visual Workflow Composer & Inspector** — the dependency graph of a real multi-agent workflow (here, the ContentForge 5-node cross-model pipeline) rendered *before* execution. Edit the script or add steps and the DAG updates.
+**1 · Visual Workflow Composer & Inspector** — the dependency graph of a real multi-agent workflow rendered *before* execution. Switch between bundled real pilots (ContentForge, Sentinel Vantage, a code-review fan-out), edit the script, or add steps — the DAG updates live. Conditional branches and parallel fan-outs render as diverging arrows.
 
-![Workflow Composer](docs/composer.png)
+![Workflow Composer — ContentForge](docs/composer.png)
+
+The same composer pointed at a second pilot — **Sentinel Vantage** (MerchantMind) — showing its PII→Sheriff governance **branch** (the Route node diverges to the Analyst and the Sheriff, then reconverges):
+
+![Workflow Composer — Sentinel Vantage branch](docs/composer-sentinel.png)
 
 **2 · Active Session Health** — context-utilization gauge + zone timeline. The warning fires at **turn 37**, *before* the high-risk zone — so cleanup happens while decisions are still intact, not after output degrades. Smart-cleanup preview shows what's preserved vs. compacted.
 

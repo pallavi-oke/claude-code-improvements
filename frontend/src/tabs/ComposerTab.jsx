@@ -23,6 +23,7 @@ function AgentNode({ data }) {
         <span className="w-2 h-2 rounded-full" style={{ background: data.color }} />
         <span className="text-[10px] uppercase tracking-wide text-muted">{data.phase || "agent"}</span>
         {data.parallel && <span className="chip bg-accent/20 text-accent !px-1.5 !py-0 text-[9px]">∥</span>}
+        {data.branch && <span className="chip bg-warn/20 text-warn !px-1.5 !py-0 text-[9px]">⑂ branch</span>}
       </div>
       <div className="text-white/90 leading-snug">{data.label}</div>
       <Handle type="source" position={Position.Right} style={{ background: data.color }} />
@@ -46,13 +47,30 @@ export default function ComposerTab() {
   const [graph, setGraph] = useState(null);
   const [selected, setSelected] = useState(null);
   const [err, setErr] = useState("");
+  const [examples, setExamples] = useState([]);
+  const [exampleId, setExampleId] = useState("contentforge");
 
   useEffect(() => {
-    api.workflowSample().then((d) => {
-      setScript(d.script);
-      setGraph(d.graph);
+    api.examples().then((d) => {
+      setExamples(d.examples);
+      const want = new URLSearchParams(window.location.search).get("example");
+      const chosen = d.examples.find((e) => e.id === want) || d.examples[0];
+      if (chosen) {
+        setExampleId(chosen.id);
+        setScript(chosen.script);
+        setGraph(chosen.graph);
+      }
     });
   }, []);
+
+  function loadExample(id) {
+    const ex = examples.find((e) => e.id === id);
+    if (!ex) return;
+    setExampleId(id);
+    setScript(ex.script);
+    setGraph(ex.graph);
+    setSelected(null);
+  }
 
   const reparse = useCallback(async (text) => {
     try {
@@ -73,6 +91,25 @@ export default function ComposerTab() {
     <div className="grid lg:grid-cols-[380px_1fr] gap-4 h-full">
       {/* left: script + palette */}
       <div className="space-y-3">
+        {examples.length > 0 && (
+          <div className="card !p-3">
+            <div className="text-[11px] uppercase tracking-wide text-muted mb-2">Load example (real pilots)</div>
+            <div className="flex flex-wrap gap-1.5">
+              {examples.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => loadExample(e.id)}
+                  title={e.description}
+                  className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+                    exampleId === e.id ? "bg-accent text-ink" : "bg-panel2 text-muted hover:text-white"
+                  }`}
+                >
+                  {e.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="card !p-3">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold text-sm">Workflow script</h3>
@@ -114,6 +151,7 @@ export default function ComposerTab() {
           )}
           {graph && (
             <div className="absolute top-3 left-3 flex gap-2 text-[11px]">
+              {graph.edges?.some((e) => e.kind === "branch") && <span className="chip bg-warn/20 text-warn">conditional branch</span>}
               {(graph.constructs?.parallel) && <span className="chip bg-accent/20 text-accent">parallel fan-out</span>}
               {(graph.constructs?.pipeline) && <span className="chip bg-good/20 text-good">pipeline</span>}
               <span className="chip bg-panel2 text-muted">{graph.constructs?.agent_count} agents · {graph.phases.length} phases</span>
@@ -165,7 +203,10 @@ function Inspector({ selected, graph }) {
         <div className="grid sm:grid-cols-3 gap-3 text-xs">
           <Field k="Node" v={selected.label} />
           <Field k="Phase" v={selected.phase || "—"} />
-          <Field k="Runs in parallel" v={selected.parallel ? "Yes (fan-out)" : "Sequential"} />
+          <Field
+            k="Execution"
+            v={selected.branch ? "Conditional branch" : selected.parallel ? "Parallel fan-out" : "Sequential"}
+          />
         </div>
       )}
     </div>
@@ -203,16 +244,34 @@ function layout(graph, setSelected) {
         label: n.label,
         phase: n.phase,
         parallel: n.parallel,
+        branch: n.branch,
         out: n.type === "output",
         color: phaseColor(phases, n.phase),
         onClick: () => setSelected(n),
       },
     };
   });
-  const edges = graph.edges.map((e, i) => ({
-    id: `e${i}`,
-    source: e.source,
-    target: e.target,
-  }));
+  const EDGE_COLOR = { branch: "#f59e0b", parallel: "#7c9bff", seq: "#3a4a73" };
+  const seen = {};
+  const edges = graph.edges.map((e, i) => {
+    const kind = e.kind || "seq";
+    const color = EDGE_COLOR[kind];
+    // label the branch fork once (on the first diverging edge)
+    const showLabel = kind === "branch" && !seen[e.source];
+    if (kind === "branch") seen[e.source] = true;
+    return {
+      id: `e${i}`,
+      source: e.source,
+      target: e.target,
+      type: "smoothstep",
+      animated: kind !== "seq",
+      style: { stroke: color, strokeWidth: kind === "seq" ? 1.5 : 2, strokeDasharray: kind === "branch" ? "5 4" : undefined },
+      markerEnd: { type: MarkerType.ArrowClosed, color },
+      label: showLabel ? "if / else" : undefined,
+      labelStyle: { fill: "#f59e0b", fontSize: 9, fontWeight: 600 },
+      labelBgStyle: { fill: "#10162a", fillOpacity: 0.9 },
+      labelBgPadding: [4, 2],
+    };
+  });
   return { nodes, edges };
 }

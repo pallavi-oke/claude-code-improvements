@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from health import session_health
 from sample_data import build_team_sessions
 from transcripts import aggregate, load_live_sessions
-from workflow_parse import SAMPLE_WORKFLOW, parse_workflow
+from workflow_parse import EXAMPLES, SAMPLE_WORKFLOW, parse_workflow
 
 app = FastAPI(title="Claude Code Product Improvement Prototypes")
 app.add_middleware(
@@ -101,6 +101,18 @@ def workflow(req: WorkflowReq) -> dict:
 @app.get("/api/workflow/sample")
 def workflow_sample() -> dict:
     return {"script": SAMPLE_WORKFLOW, "graph": parse_workflow(SAMPLE_WORKFLOW)}
+
+
+@app.get("/api/workflow/examples")
+def workflow_examples() -> dict:
+    """Selectable example workflows (real pilots) for the Composer switcher."""
+    return {
+        "examples": [
+            {"id": e["id"], "name": e["name"], "description": e["description"],
+             "script": e["script"], "graph": parse_workflow(e["script"])}
+            for e in EXAMPLES
+        ]
+    }
 
 
 # Serve the built frontend if present (single-binary demo).

@@ -22,5 +22,6 @@ export const api = {
   health: (source) => get(`/api/health?source=${source}`),
   healthOne: (id, source) => get(`/api/health/${id}?source=${source}`),
   workflowSample: () => get("/api/workflow/sample"),
+  examples: () => get("/api/workflow/examples"),
   workflow: (script) => post("/api/workflow", { script }),
 };
