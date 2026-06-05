@@ -15,7 +15,7 @@ runs on any laptop.
 
 ## Screenshots
 
-**1 · Visual Workflow Composer & Inspector** — the dependency graph of a real multi-agent workflow rendered *before* execution. Switch between bundled real pilots (ContentForge, Sentinel Vantage, a code-review fan-out), edit the script, or add steps — the DAG updates live. Conditional branches and parallel fan-outs render as diverging arrows.
+**1 · Visual Workflow Composer & Inspector** — the dependency graph of a multi-agent workflow rendered *before* execution. Switch between bundled examples (ContentForge and Sentinel Vantage are real pilots; a code-review fan-out is a generic pattern), edit the script, or add steps — the DAG updates live. Conditional branches and parallel fan-outs render as diverging arrows.
 
 ![Workflow Composer — ContentForge](docs/composer.png)
 

@@ -93,7 +93,7 @@ export default function ComposerTab() {
       <div className="space-y-3">
         {examples.length > 0 && (
           <div className="card !p-3">
-            <div className="text-[11px] uppercase tracking-wide text-muted mb-2">Load example (real pilots)</div>
+            <div className="text-[11px] uppercase tracking-wide text-muted mb-2">Load example</div>
             <div className="flex flex-wrap gap-1.5">
               {examples.map((e) => (
                 <button

@@ -105,7 +105,7 @@ def workflow_sample() -> dict:
 
 @app.get("/api/workflow/examples")
 def workflow_examples() -> dict:
-    """Selectable example workflows (real pilots) for the Composer switcher."""
+    """Selectable example workflows for the Composer switcher."""
     return {
         "examples": [
             {"id": e["id"], "name": e["name"], "description": e["description"],
