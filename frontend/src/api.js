@@ -19,6 +19,7 @@ export const api = {
   meta: () => get("/api/meta"),
   cost: (source) => get(`/api/cost?source=${source}`),
   tco: (source, articles) => get(`/api/tco?source=${source}&articles=${articles}`),
+  contentforgeRuns: () => get("/api/contentforge-runs"),
   sessions: (source) => get(`/api/sessions?source=${source}`),
   health: (source) => get(`/api/health?source=${source}`),
   healthOne: (id, source) => get(`/api/health/${id}?source=${source}`),

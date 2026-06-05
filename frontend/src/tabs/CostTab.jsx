@@ -15,8 +15,13 @@ const MODES = [
   { id: "total", label: "Total (TCO)" },
 ];
 
+const MODE_FROM_URL = () => {
+  const m = new URLSearchParams(window.location.search).get("mode");
+  return ["build", "run", "total"].includes(m) ? m : "total";
+};
+
 export default function CostTab({ source }) {
-  const [mode, setMode] = useState("total");
+  const [mode, setMode] = useState(MODE_FROM_URL);
   const [data, setData] = useState(null);
   const [tco, setTco] = useState(null);
   const [articles, setArticles] = useState(5000);
@@ -96,18 +101,25 @@ function BuildView({ data }) {
 
 /* ---------------- RUN-TIME (agent production cost) ---------------- */
 function RunView({ tco, articles, setArticles }) {
+  const [measured, setMeasured] = useState(null);
+  useEffect(() => {
+    api.contentforgeRuns().then(setMeasured).catch(() => setMeasured(null));
+  }, []);
+
   if (!tco) return <Loading />;
   const r = tco.runtime;
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="Cost / article" value={`$${r.per_article.toFixed(3)}`} tone="good" sub="full 5-node pipeline" />
+        <Stat label="Cost / article (modeled)" value={`$${r.per_article.toFixed(3)}`} tone="good" sub="full 5-node pipeline" />
         <Stat label="Articles / month" value={Number(articles).toLocaleString()} />
         <Stat label="Run-time / month" value={fmt(r.monthly)} tone="warn" />
         <Stat label="Run-time / year" value={fmt(r.annual)} tone="bad" />
       </div>
 
       <VolumeControl articles={articles} setArticles={setArticles} />
+
+      {measured?.available && <MeasuredRunsCard measured={measured} />}
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="card border-accent/30">
@@ -127,6 +139,77 @@ function RunView({ tco, articles, setArticles }) {
       <div className="text-[11px] text-muted">
         Modeled from ContentForge's per-node model assignment × indicative list prices. Becomes
         real once a live run's usage log is fed in — the per-article math is identical.
+      </div>
+    </div>
+  );
+}
+
+/* ---- Real ContentForge runs, measured from original pilot's SSE logs ---- */
+function MeasuredRunsCard({ measured }) {
+  const a = measured.aggregate;
+  const perNode = Object.entries(a.avg_by_node_tokens).map(([name, cost]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    cost,
+  }));
+  return (
+    <div className="card border-good/40">
+      <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+        <h3 className="font-semibold">
+          Real ContentForge runs <span className="chip bg-good/15 text-good ml-1">measured</span>
+        </h3>
+        <span className="text-[11px] text-muted">{measured.source}</span>
+      </div>
+      <div className="text-xs text-muted mb-3">
+        Parsed from the original pilot's SSE run logs — output volume is real; input tokens were
+        never captured. Several runs hit Gemini free-tier quota, so billed spend was $0.
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Stat label="Runs measured" value={a.run_count} sub="from disk" />
+        <Stat
+          label="Avg output / run"
+          value={`${a.avg_output_tokens.toLocaleString()} tok`}
+          tone="good"
+          sub="char-based estimate"
+        />
+        <Stat
+          label="Output-only cost"
+          value={`$${a.avg_cost_flash.toFixed(4)}–$${a.avg_cost_pro.toFixed(4)}`}
+          sub="Flash → Pro list prices"
+        />
+        <Stat
+          label="Est. full run (≈2.5×)"
+          value={`$${a.full_cost_low_2_5x.toFixed(3)}–$${a.full_cost_high_2_5x.toFixed(3)}`}
+          tone="warn"
+          sub="adding back inputs"
+        />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4 mt-3">
+        <div>
+          <div className="text-xs text-muted mb-2">Output tokens by node (avg per run)</div>
+          <AttributionBars rows={perNode} height={150} />
+        </div>
+        <div>
+          <div className="text-xs text-muted mb-2">Per-run detail</div>
+          <div className="space-y-1.5">
+            {measured.runs.map((r) => (
+              <div key={r.file} className="flex items-center justify-between bg-panel2/60 rounded-lg px-3 py-1.5 text-xs">
+                <span className="font-mono text-muted truncate">{r.file}</span>
+                <span className="text-white/90">
+                  {r.output_tokens.toLocaleString()} tok · {r.articles} article{r.articles === 1 ? "" : "s"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 text-[11px] text-muted leading-relaxed">
+        <b className="text-white">Read:</b> Generator dominates output volume (~{Math.round(
+          (a.avg_by_node_tokens.generator / a.avg_output_tokens) * 100
+        )}% of tokens) — consistent with the modeled view above. The absence of usage logging in
+        the original pilot is itself the gap this prototype's run-time view closes.
       </div>
     </div>
   );

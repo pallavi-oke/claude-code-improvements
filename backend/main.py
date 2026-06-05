@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from contentforge_runs import measured_runs
 from health import session_health
 from runtime_cost import runtime
 from sample_data import build_team_sessions
@@ -56,6 +57,14 @@ def meta() -> dict:
 @app.get("/api/cost")
 def cost(source: str = "all") -> dict:
     return aggregate(get_sessions(source))
+
+
+@app.get("/api/contentforge-runs")
+def contentforge_runs() -> dict:
+    """Measured output volume + indicative cost from the original ContentForge's
+    real run logs (output-only; inputs not captured). Returns
+    {available: false, ...} on machines that don't have the original repo."""
+    return measured_runs()
 
 
 @app.get("/api/tco")

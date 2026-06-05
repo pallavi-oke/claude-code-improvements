@@ -34,6 +34,10 @@ The same composer pointed at a second pilot — **Sentinel Vantage** (MerchantMi
 
 ![Cost — Total Cost of Ownership](docs/cost.png)
 
+The Run-time view also surfaces **real measured runs** from the original ContentForge pilot on disk — parsing the existing SSE logs (~/agentContentGen) to extract actual output token volume per run (avg ~2,700 tok/run; Generator drives ~76%). Honest caveat baked in: original pilot never captured input tokens or `usage_metadata`, and several runs hit Gemini free-tier quota — so billed spend was $0. The card displays the gap that motivates this prototype: usage logging at the router layer would make these numbers exact instead of estimated.
+
+![Cost — Run-time with measured ContentForge runs](docs/cost-runtime-measured.png)
+
 > Tip: tabs and data source are deep-linkable — e.g. `…/#health` or `…/?source=sample#cost`.
 
 ## Approach
