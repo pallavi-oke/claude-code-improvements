@@ -37,8 +37,8 @@ export default function CostTab({ source }) {
           </span>
         </div>
         <div className="text-xs text-muted mb-2">
-          Per-node model attribution for the system I built — the view that answers
-          "which model is driving cost, and is it worth it?"
+          Per-node model attribution for the ContentForge pipeline — the view that
+          answers "which model is driving cost, and is it worth it?"
         </div>
         <AttributionBars
           rows={(data.by_model_contentforge?.length ? data.by_model_contentforge : data.by_model)}

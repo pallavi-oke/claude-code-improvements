@@ -1,11 +1,11 @@
-"""FastAPI backend for the Claude Code PM demo dashboard.
+"""FastAPI backend for the Claude Code product-improvement prototypes.
 
-Three demos, one API:
-  /api/cost      -> team cost attribution + forecast (pain point #3)
-  /api/health/*  -> session health timeline + cleanup preview (pain point #2)
-  /api/workflow  -> parse a workflow script into a DAG (pain point #1)
+Three prototypes, one API:
+  /api/cost      -> team cost attribution + forecast (gap #3)
+  /api/health/*  -> session health timeline + cleanup preview (gap #2)
+  /api/workflow  -> parse a workflow script into a DAG (gap #1)
 
-Data source toggle: ?source=live (your real ~/.claude transcripts),
+Data source toggle: ?source=live (real ~/.claude transcripts),
 ?source=sample (synthetic team), or ?source=all (both merged).
 """
 
@@ -23,7 +23,7 @@ from sample_data import build_team_sessions
 from transcripts import aggregate, load_live_sessions
 from workflow_parse import SAMPLE_WORKFLOW, parse_workflow
 
-app = FastAPI(title="Claude Code PM Demos")
+app = FastAPI(title="Claude Code Product Improvement Prototypes")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

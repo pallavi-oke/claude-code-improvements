@@ -65,7 +65,7 @@ export default function App() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-[13px] uppercase tracking-widest text-accent/80 font-semibold">
-              Claude Code · PM Concept Demos
+              Claude Code · Product Improvement Prototypes
             </div>
             <div className="text-xs text-muted mt-0.5">
               Three product gaps, prototyped against real Claude Code telemetry

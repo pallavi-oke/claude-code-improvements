@@ -1,11 +1,11 @@
-# Claude Code · PM Concept Demos
+# Claude Code — Product Improvement Prototypes
 
-Three product-improvement prototypes for Claude Code, built for a senior PM
-interview. Each maps a **named pain point** to a **proposed fix**, and — crucially
-— is prototyped against the **real telemetry Claude Code already emits** (its
-`~/.claude` JSONL session transcripts: per-turn token usage, model, repo path,
-git branch, timestamps), with a synthetic "team" dataset as a fallback so it runs
-on any laptop.
+Three working prototypes proposing product improvements to Claude Code. Each maps
+a **real gap** in agentic development workflows to a **concrete fix**, and —
+crucially — is prototyped against the **real telemetry Claude Code already emits**
+(its `~/.claude` JSONL session transcripts: per-turn token usage, model, repo
+path, git branch, timestamps), with a synthetic "team" dataset as a fallback so it
+runs on any laptop.
 
 | # | Pain point | Prototype |
 |---|-----------|-----------|
@@ -29,12 +29,12 @@ on any laptop.
 
 > Tip: tabs and data source are deep-linkable — e.g. `…/#health` or `…/?source=sample#cost`.
 
-## Why this is credible (the PM angle)
+## Approach
 
 These are standalone prototypes, **not** edits to Claude Code's closed source.
-The differentiator: they read the product's *actual* data surface. Demos 2 and 3
-compute real numbers from your `~/.claude` history (e.g. context-load growth,
-per-turn cost from token usage × list pricing); demo 1 parses real Workflow-tool
+What grounds them: they read the product's *actual* data surface. Prototypes 2 and 3
+compute real numbers from `~/.claude` history (e.g. context-load growth,
+per-turn cost from token usage × list pricing); prototype 1 parses real Workflow-tool
 scripts. Toggle the **data source** (Team+You / Sample Team / Live) in the header.
 
 ## Architecture
@@ -63,18 +63,17 @@ cd ../backend && uvicorn main:app --port 8000
 For frontend hot-reload during development, run `npm run dev` (port 5180) in a
 second terminal — it proxies `/api` to the backend on 8000.
 
-## Demo script (talking points)
+## What each prototype shows
 
-1. **Composer** — "Today I write a workflow as code and only *watch* it run. Here
-   I see the dependency graph first: three reviewers fan out in parallel, results
-   funnel into a verify step, then synthesis. I can add a branch and the graph
-   updates *before* I spend a token."
-2. **Health** — "This 58-turn session climbs from healthy to 96% context use. The
-   warning fires at **turn 37** — *before* the high-risk zone — so I clean up while
-   the key decisions are still intact, instead of noticing after output degrades."
-3. **Cost** — "Per-session spend is fine for one person. A team lead needs this:
-   spend by repo, use case, and engineer, plus a 30-day forecast range — the view
-   that unlocks a scale-up decision."
+1. **Composer** — A workflow is written as code and only observable once it runs.
+   The composer renders the dependency graph first — parallel fan-out, gates,
+   handoffs — so the structure (and its cost) is reviewable *before* execution.
+2. **Health** — Over a 58-turn session, context climbs from healthy to 96%. The
+   warning fires at **turn 37**, *before* the high-risk zone, so cleanup happens
+   while key decisions are still intact rather than after output degrades.
+3. **Cost** — Per-session spend is fine for one person; a team needs spend by
+   repo, use case, and engineer, plus a forecast range — the view that informs a
+   scale-up decision.
 
 ## Notes
 

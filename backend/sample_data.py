@@ -117,7 +117,7 @@ _CF_NODE_MODELS = [
 def _contentforge_sessions() -> list[dict]:
     """Cross-model runs of the ContentForge pipeline, so the Cost tab's
     per-model attribution reflects GPT-5 / Gemini / Claude spend on the
-    very system the candidate built."""
+    very system being built (the ContentForge pipeline)."""
     rng = _lcg(7)
     out = []
     for k in range(6):
