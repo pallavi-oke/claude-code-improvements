@@ -265,11 +265,20 @@ function ComparisonPanel({ articles }) {
         </div>
       </div>
 
-      <div className="mt-3 text-[11px] text-muted leading-relaxed">
-        <b className="text-white">Read:</b> Going Validator → Sonnet (still cross-model from GPT-5 Planner) saves{" "}
-        <b className="text-good">{data.savings.opus_to_sonnet_pct}%</b> with no compliance loss. The
-        5-agent system then sits within striking distance of monolithic + an Opus compliance pass —
-        but adds junk filtering, outline validation, and auditability on top.
+      <div className="mt-3 text-[11px] text-muted leading-relaxed space-y-1.5">
+        <div>
+          <b className="text-white">Read:</b> Going Validator → Sonnet (still cross-model from GPT-5 Planner) saves{" "}
+          <b className="text-good">{data.savings.opus_to_sonnet_pct}%</b> with no compliance loss. The
+          5-agent system then sits within striking distance of monolithic + an Opus compliance pass —
+          but adds junk filtering, outline validation, and auditability on top.
+        </div>
+        <div className="text-muted/80">
+          <b>Note on ratios:</b> per-article and per-month ratios are identical at the same volume —
+          pricing is per-token (linear), so there are no fixed costs or volume crossovers. The
+          {" "}
+          <b className="text-white">{tier.charAt(0).toUpperCase() + tier.slice(1)}</b>:Flash ratio
+          shown here is volume-invariant.
+        </div>
       </div>
     </div>
   );

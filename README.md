@@ -30,7 +30,7 @@ The same composer pointed at a second pilot — **Sentinel Vantage** (MerchantMi
 **3 · Cost Attribution, Forecasting & Total Cost of Ownership** — three modes:
 - **Build-time** — what it costs to *build* with Claude Code (dev spend by repo / use case / owner + forecast)
 - **Run-time** — what it costs to *operate* the agent: cost-per-article across the cross-model pipeline, scaled by a production-volume control
-- **Total (TCO)** — build-time + projected run-time for the agent, so you can compare one-time dev cost against recurring operating cost (here: ~$82 to build vs ~$13k/yr to run at 5k articles/mo — and Claude validation is the biggest run-time lever)
+- **Total (TCO)** — build-time + projected run-time for the agent, so you can compare one-time dev cost against recurring operating cost (here: ~$82 build-to-date vs ~$13K/yr to run **at 5K articles/mo on the Opus Validator tier** — and Claude validation is the biggest run-time lever)
 
 ![Cost — Total Cost of Ownership](docs/cost.png)
 
@@ -38,11 +38,20 @@ The Run-time view also surfaces **real measured runs** from the original Content
 
 ![Cost — Run-time with measured ContentForge runs](docs/cost-runtime-measured.png)
 
-And a **"Compare to monolithic"** panel that answers the obvious follow-up — *is multi-agent worth it?* It shows the 5-agent system at three Validator tiers (Opus / Sonnet / Haiku), every reasonable monolithic single-prompt baseline (Gemini Flash, GPT-5, Gemini Pro, Opus, with/without cache), and a "fair" multi-call comparison (GPT-5 generation + Opus compliance pass). A breakeven framing translates the cost delta into the number of compliance violations the multi-agent pipeline must prevent per month to justify itself. At 2K articles/day:
-- 5-agent (Opus): ~$12.6K/mo · with Sonnet validator: ~$7K/mo (a single config change saves ~44%)
-- Cheapest unsafe monolithic (Flash + cache): ~$354/mo — but no independent compliance check
-- "Fair" monolithic (GPT-5 + Opus compliance pass): ~$6.1K/mo — within striking distance of 5-agent w/ Sonnet
-- Breakeven: prevent ~12 compliance violations/mo at $1k each to justify the multi-agent cost over a no-compliance monolithic
+And a **"Compare to monolithic"** panel that answers the obvious follow-up — *is multi-agent worth it?* It shows the 5-agent system at three Validator tiers (Opus / Sonnet / Haiku), every reasonable monolithic single-prompt baseline (Gemini Flash, GPT-5, Gemini Pro, Opus, with/without cache), and a "fair" multi-call comparison (GPT-5 generation + Opus compliance pass). A breakeven framing translates the cost delta into the number of compliance violations the multi-agent pipeline must prevent per month to justify itself.
+
+At 2K articles/day (60K/mo), comparing 5-agent against the cheapest unsafe monolithic (Flash + cache, **$0.0059/article · $354/mo**):
+
+| 5-agent Validator tier | Per article | Monthly | × Flash |
+|---|---|---|---|
+| **Opus tier** | $0.2107 | $12,642 | **35.7×** |
+| **Sonnet tier** | $0.1171 | $7,026 | **19.9×** |
+| **Haiku tier** | $0.0999 | $5,996 | **16.9×** |
+
+Two notes worth knowing if anyone probes the math:
+- **Per-article ratio = per-month ratio at the same volume.** Pricing is per-token (purely linear), so there are no fixed costs, batch tiers, or volume crossovers in this model. The Opus:Flash ratio is 35.7× whether you run 3K/mo or 60K/mo.
+- **The "fair" monolithic** (GPT-5 generation + Opus compliance pass) lands at **$6,105/mo** — within $1K of the 5-agent system at the Sonnet tier. Going Validator → Sonnet saves 44% from Opus tier without losing the cross-model judge property.
+- **Breakeven**: at Opus tier, 5-agent costs **+$12,288/mo** over Flash monolithic — justified if the pipeline prevents **~12 compliance violations/mo at $1K each** (or 2.5 at $5K each).
 
 ![Cost — Compare 5-agent to monolithic baselines](docs/cost-comparison.png)
 
