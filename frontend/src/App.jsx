@@ -1,37 +1,40 @@
 import React, { useEffect, useState } from "react";
 import { api } from "./api";
+import GovernanceTab from "./tabs/GovernanceTab.jsx";
 import ComposerTab from "./tabs/ComposerTab.jsx";
-import HealthTab from "./tabs/HealthTab.jsx";
 import CostTab from "./tabs/CostTab.jsx";
 
 const TABS = [
   {
-    id: "composer",
-    label: "1 · Workflow Composer",
-    pain: "I can watch agents run, but I can't shape how they fit together before they start.",
-    fix: "Visual composer & inspector — see handoffs, branches, and parallel runs before execution.",
-    anchor: "Wiring ContentForge's 5-node graph (scorer→planner→validator→generator→reviewer) was all hand-coded — I couldn't see the structure before running it.",
+    id: "governance",
+    label: "1 · Agent Governance & Audit",
+    badge: "P0",
+    pain: "Control today is stitched from managed settings, a Compliance API, telemetry, and a proxy — with gaps across MCP, plugins, and Cowork. No single policy or complete audit trail.",
+    fix: "One place to define policy, gate risky actions, and review what agents did — with an audit-only mode you can graduate to enforcement.",
+    anchor: "Rolling ContentForge & Sentinel Vantage out across teams meant policing prod deploys, secret access, MCP installs, and Cowork tools by hand. Each surface had its own knob.",
   },
   {
-    id: "health",
-    label: "2 · Session Health",
-    pain: "In long sessions, output quality can quietly degrade before I notice.",
-    fix: "A pre-emptive health signal + smart cleanup that preserves decisions and constraints.",
-    anchor: "Building ContentForge was one long multi-hour session — exactly where context quietly fills up and output starts to drift.",
+    id: "composer",
+    label: "2 · Agent Plan & Run Inspector",
+    badge: "P1",
+    pain: "Runtime already shows a live run. The gap is the build phase — while wiring up a multi-agent system, there is no map of how the agents connect and hand off.",
+    fix: "A native inspector that maps the system as you build it: agents, handoffs, branches, parallel runs — visible before you execute.",
+    anchor: "Wiring ContentForge's 5-node graph (scorer→planner→validator→generator→reviewer) was all hand-coded. I couldn't see the structure before running it. Same for Sentinel's 6-agent governance branch.",
   },
   {
     id: "cost",
     label: "3 · Team Cost",
-    pain: "As usage scales, spend is hard to attribute, predict, and compare to value.",
-    fix: "Cost by repo, use case & owner, with forecast ranges — not just per-session totals.",
-    anchor: "ContentForge is cross-model — GPT-5, Gemini, Claude. Knowing which agent/model/repo drives spend is what unlocks a team scale-up.",
+    badge: "P2",
+    pain: "Spend shows up by user and model, but not by team, repo, or workflow. So there's no way to see what an agent workflow costs, or forecast it before scaling.",
+    fix: "Spend broken down by repo, workflow, and use case, with forecasts shown as ranges — enough to budget agent work, not just watch the total.",
+    anchor: "ContentForge is cross-model — GPT-5, Gemini, Claude. Knowing which agent / model / repo drives spend is what unlocks a team scale-up decision.",
   },
 ];
 
-const VALID_TABS = ["composer", "health", "cost"];
+const VALID_TABS = ["governance", "composer", "cost"];
 const tabFromHash = () => {
   const h = (window.location.hash || "").replace("#", "");
-  return VALID_TABS.includes(h) ? h : "composer";
+  return VALID_TABS.includes(h) ? h : "governance";
 };
 
 const sourceFromUrl = () => {
@@ -46,7 +49,7 @@ export default function App() {
 
   const setTab = (id) => {
     setTabState(id);
-    window.location.hash = id; // deep-linkable: #composer / #health / #cost
+    window.location.hash = id; // deep-linkable
   };
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function App() {
               Claude Code · Product Improvement Prototypes
             </div>
             <div className="text-xs text-muted mt-0.5">
-              Three product gaps, prototyped against real Claude Code telemetry
+              Three product gaps for the enterprise agent builder, prototyped against real telemetry
             </div>
           </div>
           <DataSourceToggle source={source} setSource={setSource} meta={meta} />
@@ -104,21 +107,22 @@ export default function App() {
           </div>
         </div>
         <div className="gap-caption mt-2 max-w-5xl border-l-2 border-accent/60 pl-2.5">
-          <span className="text-accent font-semibold">From building ContentForge · </span>
+          <span className="text-accent font-semibold">From building ContentForge & Sentinel Vantage · </span>
           {active.anchor}
         </div>
       </div>
 
       {/* Body */}
       <main className="flex-1 p-6 overflow-auto">
+        {tab === "governance" && <GovernanceTab />}
         {tab === "composer" && <ComposerTab />}
-        {tab === "health" && <HealthTab source={source} />}
         {tab === "cost" && <CostTab source={source} />}
       </main>
 
       <footer className="px-6 py-2 text-[11px] text-muted/70 border-t border-edge/40">
         Prototype · reads ~/.claude transcripts (token usage, model, repo, branch,
-        timestamps) with a synthetic team fallback. Dollar figures use indicative list pricing.
+        timestamps) with a synthetic team fallback. Validated on two shipped pilots:
+        ContentForge (5-agent) and Sentinel Vantage (6-agent).
       </footer>
     </div>
   );

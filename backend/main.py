@@ -1,9 +1,9 @@
 """FastAPI backend for the Claude Code product-improvement prototypes.
 
 Three prototypes, one API:
-  /api/cost      -> team cost attribution + forecast (gap #3)
-  /api/health/*  -> session health timeline + cleanup preview (gap #2)
-  /api/workflow  -> parse a workflow script into a DAG (gap #1)
+  /api/governance/*  -> agent governance & audit (gap #1, P0)
+  /api/workflow      -> parse a workflow script into a DAG (gap #2, P1)
+  /api/cost          -> team cost attribution + forecast (gap #3, P2)
 
 Data source toggle: ?source=live (real ~/.claude transcripts),
 ?source=sample (synthetic team), or ?source=all (both merged).
@@ -20,7 +20,7 @@ from pydantic import BaseModel
 
 from comparison import compare
 from contentforge_runs import measured_runs
-from health import session_health
+from governance import governance_state
 from runtime_cost import runtime
 from sample_data import build_team_sessions
 from transcripts import aggregate, load_live_sessions
@@ -122,24 +122,15 @@ def sessions(source: str = "all") -> list[dict]:
     return sorted(out, key=lambda s: s["cost"], reverse=True)
 
 
-@app.get("/api/health/{session_id}")
-def health_one(session_id: str, source: str = "all") -> dict:
-    for s in get_sessions(source):
-        if s["session_id"] == session_id:
-            return session_health(s)
-    return {"error": "not found"}
+@app.get("/api/governance")
+def governance(mode: str = "audit", surface: str = "all") -> dict:
+    """Governance state — policies, audit log, coverage map, blocked actions.
 
-
-@app.get("/api/health")
-def health_default(source: str = "all") -> dict:
-    """Health of the most demonstrative session (prefers the hero, else the
-    highest-utilization session)."""
-    sessions_ = get_sessions(source)
-    if not sessions_:
-        return {"error": "no sessions"}
-    hero = next((s for s in sessions_ if s["session_id"] == "demo-hero"), None)
-    chosen = hero or max(sessions_, key=lambda s: s["peak_utilization"])
-    return session_health(chosen)
+    Args:
+      mode: "audit" (log only) | "enforced" (block + log)
+      surface: filter audit log by surface: all|cli|mcp|plugins|cowork
+    """
+    return governance_state(mode=mode, surface=surface)
 
 
 class WorkflowReq(BaseModel):
