@@ -1,4 +1,4 @@
-# Claude Code — Product Improvement Prototypes
+# Claude Code CLI: Product Improvement Prototypes
 
 Three working prototypes proposing product improvements to Claude Code, framed for the **enterprise agent builder** — a platform/DevEx lead rolling Claude Code out across an org of engineers building multi-agent systems. Each maps a **real gap** to a **concrete fix**, validated against two shipped pilots: **ContentForge** (5-agent cross-model content pipeline) and **Sentinel Vantage** (6-agent voice-first agentic system with a PII→Sheriff governance branch).
 
