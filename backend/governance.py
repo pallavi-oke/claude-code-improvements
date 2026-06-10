@@ -1,12 +1,17 @@
 """Agent Governance & Audit — backend data model for the P0 prototype.
 
-What this prototype demonstrates:
+This prototype is tuned to Ironclad's surfaces (Workflow Designer, Compliance
+API, AI Assist & Repository, third-party integrations) — so the policy list
+and the coverage map read as policies a contract-lifecycle-management platform
+would actually enforce, not generic IT controls.
+
+What this demonstrates:
   1. A single policy plane — one place to define rules that apply across
      Claude Code's surfaces (CLI commands, MCP servers, plugins, Cowork).
   2. Risky-action gating — high-risk actions are blocked (or in audit-only
      mode, logged with a 'would_block' flag) before they run.
   3. Complete audit trail — every agent action logged with surface,
-     command, policy decision, and rationale.
+     actor/workspace, policy decision, and rationale.
   4. Coverage map — visualizes where policy enforcement reaches today vs.
      where it's stitched together (the slide-7 pain point).
   5. Audit-only -> enforcement graduation — the slide-10 mitigation
@@ -17,144 +22,143 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timedelta
-from typing import Literal
 
 # ----------------------------------------------------------------------------
-# Policies (the rule set)
+# Policies — Ironclad-specific risk model
 # ----------------------------------------------------------------------------
-
-# severity: how risky the action is if allowed to run un-gated
-# applies_to: which Claude Code surfaces this policy covers
 POLICIES = [
     {
         "id": "POL-001",
-        "name": "Block prod deployments without approval",
-        "category": "Deploy",
+        "name": "Tenant boundary enforcement",
+        "category": "Data isolation",
         "severity": "critical",
-        "applies_to": ["cli", "mcp", "plugins"],
-        "rule": "Deny `git push` to main/prod branches and CI/CD deploy MCP calls unless approver != actor.",
+        "applies_to": ["workflow", "compliance-api", "ai-assist", "integrations"],
+        "rule": "Agents cannot read or modify contracts outside their assigned workspace. Cross-tenant requests require explicit elevated approval.",
         "enabled": True,
     },
     {
         "id": "POL-002",
-        "name": "Gate secret/credential access",
-        "category": "Secrets",
+        "name": "Attorney-client privilege redaction",
+        "category": "Privilege",
         "severity": "critical",
-        "applies_to": ["cli", "mcp", "plugins", "cowork"],
-        "rule": "Require justification + audit log for reads of AWS Secrets Manager, .env, ssh keys, cloud creds.",
+        "applies_to": ["ai-assist", "integrations"],
+        "rule": "Contract clauses tagged 'privileged' must be redacted before any external model call. Privilege loss is not recoverable.",
         "enabled": True,
     },
     {
         "id": "POL-003",
-        "name": "Restrict MCP server installs to allowlist",
-        "category": "Supply chain",
-        "severity": "high",
-        "applies_to": ["mcp", "cowork"],
-        "rule": "Only servers on the org allowlist can be added. Block unsigned or unknown publishers.",
+        "name": "EU data residency (GDPR)",
+        "category": "Data residency",
+        "severity": "critical",
+        "applies_to": ["ai-assist", "compliance-api"],
+        "rule": "Contracts in EU workspaces route only to EU-region model endpoints (Bedrock EU, Vertex EU). Block any non-EU egress.",
         "enabled": True,
     },
     {
         "id": "POL-004",
-        "name": "Forbid network egress to non-allowlisted domains",
-        "category": "Data exfiltration",
+        "name": "Approval matrix enforcement",
+        "category": "Workflow",
         "severity": "high",
-        "applies_to": ["cli", "plugins"],
-        "rule": "Block curl/wget/fetch to domains not on the allowlist. Includes outbound webhooks.",
+        "applies_to": ["workflow", "integrations"],
+        "rule": "Agents cannot mark a contract 'approved for signature' without traversing the configured approval hierarchy (Finance >$1M, Legal for IP, etc.).",
         "enabled": True,
     },
     {
         "id": "POL-005",
-        "name": "Require justification for destructive shell commands",
-        "category": "Destructive",
+        "name": "Executed-contract immutability",
+        "category": "Chain of custody",
         "severity": "high",
-        "applies_to": ["cli"],
-        "rule": "rm -rf, drop table, force push to shared branches need user justification before execution.",
+        "applies_to": ["workflow", "integrations"],
+        "rule": "Once a contract enters DocuSign envelope state or has a signature, agents may annotate or summarize but never edit content.",
         "enabled": True,
     },
     {
         "id": "POL-006",
-        "name": "Compliance review required for regulated content",
-        "category": "Compliance",
-        "severity": "medium",
-        "applies_to": ["cli", "plugins"],
-        "rule": "Any file under /content/{legal,finance,healthcare}/* must pass Sheriff before commit.",
+        "name": "AI suggestion audit trail",
+        "category": "AI accountability",
+        "severity": "high",
+        "applies_to": ["ai-assist", "compliance-api"],
+        "rule": "Every clause suggestion, redline, or summary logs: model used, input clauses, output, and who accepted/rejected. Customers must be able to answer 'what did the AI see and propose?'",
         "enabled": True,
     },
     {
         "id": "POL-007",
-        "name": "PII redaction before external API calls",
-        "category": "Privacy",
-        "severity": "high",
-        "applies_to": ["cli", "mcp", "plugins"],
-        "rule": "Redact emails, SSN, customer names before outbound model calls if request leaves VPC.",
+        "name": "Forbidden clause patterns",
+        "category": "Legal substance",
+        "severity": "medium",
+        "applies_to": ["ai-assist"],
+        "rule": "Block AI from suggesting clauses violating jurisdiction (non-competes in CA post AB-1076, unconditional indemnities, perpetual royalty-free licenses).",
         "enabled": True,
     },
     {
         "id": "POL-008",
-        "name": "Cowork tool permissions follow least-privilege",
-        "category": "Access",
+        "name": "Third-party sync gating",
+        "category": "Integrations",
         "severity": "medium",
-        "applies_to": ["cowork"],
-        "rule": "Cowork-launched tools inherit caller role, not session role. Block elevation.",
-        "enabled": False,  # not yet enabled — example of "draft policy"
+        "applies_to": ["integrations"],
+        "rule": "Agent-driven Salesforce / DocuSign / Notion writes that change deal state or contract status require human confirmation before propagating.",
+        "enabled": False,  # not yet enabled — the "draft policy" example
     },
 ]
 
 # ----------------------------------------------------------------------------
-# Surface coverage (the slide-7 pain point: gaps across MCP/plugins/Cowork)
+# Surface coverage — Ironclad's own surfaces, not generic Claude Code ones
 # ----------------------------------------------------------------------------
 SURFACES = [
     {
-        "id": "cli",
-        "name": "Native CLI commands",
-        "coverage": 0.95,
-        "notes": "Native commands fully gated by policy engine. Bash + git wrapped.",
+        "id": "workflow",
+        "name": "Workflow Designer",
+        "coverage": 0.94,
+        "notes": "Native workflow stages fully gated. Approval matrix + signature transitions enforced server-side.",
     },
     {
-        "id": "mcp",
-        "name": "MCP servers",
-        "coverage": 0.72,
-        "notes": "Allowlist + signed-publisher checks live. Per-tool permission inheritance still spotty.",
+        "id": "compliance-api",
+        "name": "Compliance API",
+        "coverage": 0.78,
+        "notes": "Customer-defined policy hooks enforced. Per-clause-type rules wired in; some legacy templates still lag.",
     },
     {
-        "id": "plugins",
-        "name": "Plugins & subagents",
-        "coverage": 0.68,
-        "notes": "Permissions flow at install. Runtime tool-use audit landed last sprint; older plugins lag.",
+        "id": "ai-assist",
+        "name": "AI Assist & Repository",
+        "coverage": 0.66,
+        "notes": "Redaction + audit trail live for suggestions. Forbidden-clause detection lands next sprint; older models still bypass.",
     },
     {
-        "id": "cowork",
-        "name": "Cowork tools",
-        "coverage": 0.41,
-        "notes": "Biggest gap. Cowork-launched tools run with session role, not actor role. POL-008 drafted.",
+        "id": "integrations",
+        "name": "3rd-party integrations",
+        "coverage": 0.43,
+        "notes": "Biggest gap. Salesforce + DocuSign + Notion writes inherit session role, not actor role. POL-008 drafted.",
     },
 ]
 
+# Surface keys used for filtering (must match POLICIES.applies_to + SURFACES.id)
+SURFACE_IDS = ("workflow", "compliance-api", "ai-assist", "integrations")
+
 # ----------------------------------------------------------------------------
-# Audit log — synthetic but deterministic, representative of real ops
+# Audit log — Ironclad-flavored, deterministic, representative of real ops
 # ----------------------------------------------------------------------------
 _AUDIT_TEMPLATES = [
-    # (surface, command/action, policy_id, decision, rationale)
-    ("cli", "git push origin main", "POL-001", "blocked", "Push to protected branch by actor=author; no approver."),
-    ("cli", "git push origin staging", "POL-001", "allowed", "Non-prod branch; policy permits."),
-    ("mcp", "aws-secrets / get_secret_value", "POL-002", "flagged", "Read of prod credential — justification provided."),
-    ("cli", "cat .env.production", "POL-002", "blocked", "Direct read of secrets file. Use vault MCP."),
-    ("mcp", "install: unknown-publisher/agent-x", "POL-003", "blocked", "Publisher not on org allowlist."),
-    ("mcp", "install: anthropic/postgres-mcp", "POL-003", "allowed", "Allowlisted publisher; signed."),
-    ("cli", "curl https://exfil.suspicious.io", "POL-004", "blocked", "Domain not on egress allowlist."),
-    ("cli", "rm -rf node_modules/", "POL-005", "allowed", "Scoped to working dir; not shared resource."),
-    ("cli", "rm -rf ~/Documents/", "POL-005", "blocked", "Home directory — high blast radius."),
-    ("plugins", "commit: /content/healthcare/dosage-guide.md", "POL-006", "flagged", "Healthcare content; Sheriff review queued."),
-    ("plugins", "commit: /content/finance/q3-outlook.md", "POL-006", "allowed", "Passed Sheriff compliance gate."),
-    ("mcp", "openai-direct / chat.completion (PII detected)", "POL-007", "blocked", "Email + customer name in payload; redact first."),
-    ("cli", "git push --force origin feature/x", "POL-005", "flagged", "Force push to shared feature branch."),
-    ("cowork", "launch: db-migrate as session role", "POL-008", "flagged", "Role elevation in audit-only — POL-008 not enforced yet."),
-    ("mcp", "github-mcp / create_pull_request", "POL-001", "allowed", "Standard PR flow; no protected branch involved."),
-    ("plugins", "compliance-scan-skill: full repo", "POL-006", "allowed", "Read-only scan; permitted."),
-    ("cli", "DROP TABLE customers", "POL-005", "blocked", "Destructive SQL on prod DB. Use migration MCP."),
-    ("mcp", "datadog-mcp / fetch_metrics", "POL-002", "allowed", "Read-only telemetry; no credential exposure."),
-    ("plugins", "publish-content-skill: gated content", "POL-006", "blocked", "Article failed Sheriff compliance check."),
-    ("cowork", "tool: notion-write to private workspace", "POL-008", "flagged", "Workspace ACL drifted; POL-008 still draft."),
+    # (surface, action, policy_id, decision, rationale)
+    ("ai-assist",       "repository / read_contract(workspace=globex)",        "POL-001", "blocked", "Actor workspace=acme; cross-tenant read denied."),
+    ("workflow",        "approve_for_signature: NDA-2024-1142",                 "POL-004", "allowed", "Standard NDA template; under $250K threshold; approver=Legal/Sarah Chen."),
+    ("workflow",        "approve_for_signature: MSA-IronCorp-$2.4M",            "POL-004", "blocked", "Contract value $2.4M exceeds CFO approval threshold; approver=Maya (Legal); CFO sign-off missing."),
+    ("ai-assist",       "ai-assist / suggest_clause(jurisdiction=CA)",          "POL-007", "flagged", "Suggested 18-month non-compete; CA AB-1076 disallows. Suggestion withheld pending review."),
+    ("ai-assist",       "ai-assist / summarize_contract(privileged=true)",      "POL-002", "blocked", "Clause marked attorney-client privileged; external model call would void privilege."),
+    ("integrations",    "salesforce-sync / update_opportunity_stage=ClosedWon", "POL-008", "flagged", "Agent attempting deal-stage advance without human confirm; POL-008 still draft."),
+    ("ai-assist",       "ai-assist / redline(workspace=eu-paris)",              "POL-003", "blocked", "EU workspace contract; agent attempted call to us-east-1 endpoint. Route via Bedrock EU."),
+    ("workflow",        "create_envelope: SaaS-Renewal-Q3",                     "POL-005", "allowed", "Pre-signature state; edits permitted."),
+    ("integrations",    "docusign / edit_envelope_document(after-signed)",      "POL-005", "blocked", "Envelope in 'Sent' state with countersignature; document is immutable to agents."),
+    ("compliance-api",  "policy-hook / fired on clause=indemnification",        "POL-007", "flagged", "Unconditional indemnity language detected; customer hook blocks default templates."),
+    ("ai-assist",       "ai-assist / propose_redline",                          "POL-006", "allowed", "Redline logged: model=claude-sonnet-4.6, 3 clauses input, 2 suggestions output, accepted by author."),
+    ("ai-assist",       "repository / extract_metadata(workspace=loreal-eu)",   "POL-003", "blocked", "EU workspace; extractor instance is us-east. Routing failure flagged to InfoSec."),
+    ("workflow",        "approve_for_signature: Vendor-MSA-Mastercard",         "POL-004", "allowed", "Approval matrix satisfied: Legal + Finance + Procurement signed off."),
+    ("compliance-api",  "policy-hook / cross_workspace_read attempt",           "POL-001", "blocked", "Customer-defined policy hook blocked outside-workspace clause comparison."),
+    ("ai-assist",       "ai-assist / suggest_clause(jurisdiction=EU)",          "POL-007", "allowed", "Suggested clause vetted against EU template set; permitted."),
+    ("integrations",    "notion-write / sync_contract_summary",                 "POL-008", "flagged", "Workspace ACL drifted; agent's Notion token has broader scope than caller. POL-008 draft."),
+    ("workflow",        "create_workflow: Healthcare Vendor Intake",            "POL-002", "flagged", "Healthcare-vertical workflow; privileged clause handling unverified — Sheriff review queued."),
+    ("ai-assist",       "ai-assist / summarize(template=privileged-comms)",     "POL-002", "blocked", "Template tagged privileged; redaction required before external model call."),
+    ("compliance-api",  "policy-hook / approval_matrix_bypass attempt",         "POL-004", "blocked", "Customer hook caught agent trying to skip CFO step on $3.1M MSA."),
+    ("integrations",    "salesforce-sync / read_account_data",                  "POL-001", "allowed", "Same-tenant read; standard sync flow."),
 ]
 
 
@@ -170,14 +174,15 @@ def _audit_log(mode: str, surface_filter: str) -> list[dict]:
         effective = decision
         if mode == "audit" and decision == "blocked":
             effective = "would_block"
-        actor = ["amir", "blair", "chen", "dana", "evan"][_seed(action) % 5]
-        repo = ["contentforge-cc", "payments-api", "sentinel-vantage", "web-dashboard", "infra-iac"][_seed(surface + action) % 5]
+        actor = ["amir", "blair", "chen", "dana", "evan", "maya", "sarah"][_seed(action) % 7]
+        # Ironclad-flavored workspaces (customer tenants + internal)
+        workspace = ["acme", "loreal-eu", "mastercard", "asana-internal", "globex", "ironcorp"][_seed(surface + action) % 6]
         out.append({
             "id": f"act_{i:03d}",
             "ts": ts.isoformat() + "Z",
             "surface": surface,
             "actor": actor,
-            "repo": repo,
+            "repo": workspace,  # frontend labels this as workspace/tenant
             "action": action,
             "policy_id": pol_id,
             "policy_name": next((p["name"] for p in POLICIES if p["id"] == pol_id), pol_id),
@@ -208,7 +213,7 @@ def _summary(audit: list[dict], mode: str) -> dict:
     allowed = by_decision.get("allowed", 0)
 
     # Scale the audit window so the numbers feel real — these are samples from
-    # a 7-day window for an org of ~300 engineers.
+    # a 7-day window for an org of ~300 engineers / legal-ops users.
     SCALE = 65
     return {
         "window_days": 7,
@@ -225,13 +230,12 @@ def _summary(audit: list[dict], mode: str) -> dict:
 def governance_state(mode: str = "audit", surface: str = "all") -> dict:
     if mode not in ("audit", "enforced"):
         mode = "audit"
-    if surface not in ("all", "cli", "mcp", "plugins", "cowork"):
+    if surface not in ("all",) + SURFACE_IDS:
         surface = "all"
 
     audit = _audit_log(mode, surface)
     summary = _summary(audit, mode)
 
-    # average surface coverage as a single headline number
     avg_coverage = sum(s["coverage"] for s in SURFACES) / len(SURFACES)
 
     return {

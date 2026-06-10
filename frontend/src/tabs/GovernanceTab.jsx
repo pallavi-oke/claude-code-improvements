@@ -4,10 +4,10 @@ import Stat from "../components/Stat.jsx";
 
 const SURFACES = [
   { id: "all", label: "All surfaces" },
-  { id: "cli", label: "CLI" },
-  { id: "mcp", label: "MCP" },
-  { id: "plugins", label: "Plugins" },
-  { id: "cowork", label: "Cowork" },
+  { id: "workflow", label: "Workflow Designer" },
+  { id: "compliance-api", label: "Compliance API" },
+  { id: "ai-assist", label: "AI Assist" },
+  { id: "integrations", label: "Integrations" },
 ];
 
 const SEVERITY_COLORS = { critical: "#ef4444", high: "#f59e0b", medium: "#7c9bff", low: "#22c55e" };
@@ -86,7 +86,7 @@ function HeadlineStats({ data }) {
   const fmt = (n) => Number(n).toLocaleString();
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <Stat label="Actions audited (7d)" value={fmt(s.total_actions)} sub="~300 engineers, ContentForge + Sentinel" />
+      <Stat label="Actions audited (7d)" value={fmt(s.total_actions)} sub="org-wide across Workflow / API / AI / Integrations" />
       <Stat
         label={`Actions ${s.enforcement_label}`}
         value={fmt(s.enforcement_count)}
@@ -105,7 +105,7 @@ function PolicyTerminal({ mode, data }) {
   const lines = [
     "$ claude /policy status",
     `policy: ${mode === "enforced" ? "enforced" : "audit-only"} (v${data.policy_version})`,
-    `coverage: ${data.coverage_pct}% across cli, mcp, plugins, cowork`,
+    `coverage: ${data.coverage_pct}% across workflow, compliance-api, ai-assist, integrations`,
     `${mode === "enforced" ? "blocked" : "would block"}: ${s.enforcement_count.toLocaleString()} actions (7d)`,
     `flagged: ${s.flagged.toLocaleString()} awaiting review`,
     `audit: ${s.total_actions.toLocaleString()} actions logged`,
@@ -192,9 +192,9 @@ function CoverageMap({ surfaces, avg }) {
         ))}
       </div>
       <div className="mt-3 text-[11px] text-muted leading-relaxed border-t border-edge/40 pt-2">
-        <b className="text-white">The gap this closes:</b> today's controls live in different surfaces with different
-        enforcement strength. One policy plane = one audit trail. Cowork (41%) is where the next
-        sprint should focus.
+        <b className="text-white">The gap this closes:</b> today's controls live across separate Ironclad surfaces with
+        different enforcement strength. One policy plane = one audit trail. 3rd-party integrations (43%) is the
+        biggest gap — Salesforce, DocuSign and Notion writes inherit session role, not actor role.
       </div>
     </div>
   );
