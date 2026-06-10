@@ -1,9 +1,9 @@
 """Agent Governance & Audit — backend data model for the P0 prototype.
 
-This prototype is tuned to Ironclad's surfaces (Workflow Designer, Compliance
-API, AI Assist & Repository, third-party integrations) — so the policy list
-and the coverage map read as policies a contract-lifecycle-management platform
-would actually enforce, not generic IT controls.
+This prototype is tuned to a contract-lifecycle-management (CLM) platform's
+surfaces (Workflow Designer, Compliance API, AI Assist & Repository, third-
+party integrations) — so the policy list and the coverage map read as policies
+a CLM platform would actually enforce, not generic IT controls.
 
 What this demonstrates:
   1. A single policy plane — one place to define rules that apply across
@@ -24,7 +24,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 # ----------------------------------------------------------------------------
-# Policies — Ironclad-specific risk model
+# Policies — CLM-specific risk model
 # ----------------------------------------------------------------------------
 POLICIES = [
     {
@@ -102,7 +102,7 @@ POLICIES = [
 ]
 
 # ----------------------------------------------------------------------------
-# Surface coverage — Ironclad's own surfaces, not generic Claude Code ones
+# Surface coverage — a CLM platform's own surfaces, not generic Claude Code ones
 # ----------------------------------------------------------------------------
 SURFACES = [
     {
@@ -135,13 +135,13 @@ SURFACES = [
 SURFACE_IDS = ("workflow", "compliance-api", "ai-assist", "integrations")
 
 # ----------------------------------------------------------------------------
-# Audit log — Ironclad-flavored, deterministic, representative of real ops
+# Audit log — CLM-flavored, deterministic, representative of real ops
 # ----------------------------------------------------------------------------
 _AUDIT_TEMPLATES = [
     # (surface, action, policy_id, decision, rationale)
     ("ai-assist",       "repository / read_contract(workspace=globex)",        "POL-001", "blocked", "Actor workspace=acme; cross-tenant read denied."),
     ("workflow",        "approve_for_signature: NDA-2024-1142",                 "POL-004", "allowed", "Standard NDA template; under $250K threshold; approver=Legal/Sarah Chen."),
-    ("workflow",        "approve_for_signature: MSA-IronCorp-$2.4M",            "POL-004", "blocked", "Contract value $2.4M exceeds CFO approval threshold; approver=Maya (Legal); CFO sign-off missing."),
+    ("workflow",        "approve_for_signature: MSA-Globex-$2.4M",              "POL-004", "blocked", "Contract value $2.4M exceeds CFO approval threshold; approver=Maya (Legal); CFO sign-off missing."),
     ("ai-assist",       "ai-assist / suggest_clause(jurisdiction=CA)",          "POL-007", "flagged", "Suggested 18-month non-compete; CA AB-1076 disallows. Suggestion withheld pending review."),
     ("ai-assist",       "ai-assist / summarize_contract(privileged=true)",      "POL-002", "blocked", "Clause marked attorney-client privileged; external model call would void privilege."),
     ("integrations",    "salesforce-sync / update_opportunity_stage=ClosedWon", "POL-008", "flagged", "Agent attempting deal-stage advance without human confirm; POL-008 still draft."),
@@ -150,7 +150,7 @@ _AUDIT_TEMPLATES = [
     ("integrations",    "docusign / edit_envelope_document(after-signed)",      "POL-005", "blocked", "Envelope in 'Sent' state with countersignature; document is immutable to agents."),
     ("compliance-api",  "policy-hook / fired on clause=indemnification",        "POL-007", "flagged", "Unconditional indemnity language detected; customer hook blocks default templates."),
     ("ai-assist",       "ai-assist / propose_redline",                          "POL-006", "allowed", "Redline logged: model=claude-sonnet-4.6, 3 clauses input, 2 suggestions output, accepted by author."),
-    ("ai-assist",       "repository / extract_metadata(workspace=loreal-eu)",   "POL-003", "blocked", "EU workspace; extractor instance is us-east. Routing failure flagged to InfoSec."),
+    ("ai-assist",       "repository / extract_metadata(workspace=northwind-eu)","POL-003", "blocked", "EU workspace; extractor instance is us-east. Routing failure flagged to InfoSec."),
     ("workflow",        "approve_for_signature: Vendor-MSA-Mastercard",         "POL-004", "allowed", "Approval matrix satisfied: Legal + Finance + Procurement signed off."),
     ("compliance-api",  "policy-hook / cross_workspace_read attempt",           "POL-001", "blocked", "Customer-defined policy hook blocked outside-workspace clause comparison."),
     ("ai-assist",       "ai-assist / suggest_clause(jurisdiction=EU)",          "POL-007", "allowed", "Suggested clause vetted against EU template set; permitted."),
@@ -175,8 +175,8 @@ def _audit_log(mode: str, surface_filter: str) -> list[dict]:
         if mode == "audit" and decision == "blocked":
             effective = "would_block"
         actor = ["amir", "blair", "chen", "dana", "evan", "maya", "sarah"][_seed(action) % 7]
-        # Ironclad-flavored workspaces (customer tenants + internal)
-        workspace = ["acme", "loreal-eu", "mastercard", "asana-internal", "globex", "ironcorp"][_seed(surface + action) % 6]
+        # CLM customer workspaces (illustrative tenant names)
+        workspace = ["acme", "northwind-eu", "mastercard", "globex", "umbrella-corp", "stark-industries"][_seed(surface + action) % 6]
         out.append({
             "id": f"act_{i:03d}",
             "ts": ts.isoformat() + "Z",

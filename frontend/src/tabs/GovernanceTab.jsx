@@ -192,8 +192,8 @@ function CoverageMap({ surfaces, avg }) {
         ))}
       </div>
       <div className="mt-3 text-[11px] text-muted leading-relaxed border-t border-edge/40 pt-2">
-        <b className="text-white">The gap this closes:</b> today's controls live across separate Ironclad surfaces with
-        different enforcement strength. One policy plane = one audit trail. 3rd-party integrations (43%) is the
+        <b className="text-white">The gap this closes:</b> today's controls live across separate CLM platform surfaces
+        with different enforcement strength. One policy plane = one audit trail. 3rd-party integrations (43%) is the
         biggest gap — Salesforce, DocuSign and Notion writes inherit session role, not actor role.
       </div>
     </div>

@@ -20,7 +20,7 @@ The deck orders these by **cost of leaving them unsolved**: legal/compliance/rep
 
 Today's controls live in different surfaces with different enforcement strengths and no single audit trail. The prototype consolidates them into one policy plane with an **audit-only → enforced** toggle (the slide-10 mitigation: start in audit-only mode, enforce after watching real usage).
 
-**Tuned to Ironclad's surfaces** — Workflow Designer, Compliance API, AI Assist & Repository, and 3rd-party integrations (Salesforce, DocuSign, Notion). The policies are the ones a CLM platform actually has to enforce: tenant boundary, attorney-client privilege redaction, EU data residency (GDPR), approval matrix enforcement, executed-contract immutability, AI suggestion audit trail, forbidden clause patterns (e.g. CA AB-1076 non-competes), and third-party sync gating. Coverage map calls out where enforcement is weakest — 3rd-party integrations at 43% — because Salesforce/DocuSign/Notion writes still inherit session role, not actor role.
+**Tuned to a contract-lifecycle-management (CLM) platform's surfaces** — Workflow Designer, Compliance API, AI Assist & Repository, and 3rd-party integrations (Salesforce, DocuSign, Notion). The policies are the ones a CLM platform actually has to enforce: tenant boundary, attorney-client privilege redaction, EU data residency (GDPR), approval matrix enforcement, executed-contract immutability, AI suggestion audit trail, forbidden clause patterns (e.g. CA AB-1076 non-competes), and third-party sync gating. Coverage map calls out where enforcement is weakest — 3rd-party integrations at 43% — because Salesforce/DocuSign/Notion writes still inherit session role, not actor role.
 
 ![Agent Governance & Audit](docs/governance.png)
 

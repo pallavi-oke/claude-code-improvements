@@ -11,7 +11,7 @@ const TABS = [
     badge: "P0",
     pain: "Control today is stitched from managed settings, a Compliance API, telemetry, and a proxy — with gaps across MCP, plugins, and Cowork. No single policy or complete audit trail.",
     fix: "One place to define policy, gate risky actions, and review what agents did — with an audit-only mode you can graduate to enforcement.",
-    anchor: "Tuned to Ironclad's surfaces: Workflow Designer, Compliance API, AI Assist & Repository, and 3rd-party integrations (Salesforce, DocuSign, Notion). The policies are the ones a CLM platform actually has to enforce — tenant isolation, privilege protection, EU residency, approval matrices.",
+    anchor: "Tuned to a contract-lifecycle-management (CLM) platform's surfaces: Workflow Designer, Compliance API, AI Assist & Repository, and 3rd-party integrations (Salesforce, DocuSign, Notion). The policies are the ones a CLM platform actually has to enforce — tenant isolation, privilege protection, EU residency, approval matrices.",
   },
   {
     id: "composer",
